@@ -1,4 +1,4 @@
-﻿#ファイル内を実際に読み込む
+﻿#テキストファイル内を実際に読み込む
 function ReadFile($_filePath){
     if(Test-Path $_filePath){
         try{
