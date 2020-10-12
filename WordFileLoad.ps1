@@ -1,13 +1,19 @@
 ﻿#wordファイルを読み込む
 function ReadWordFile($_filePath){
-    if(Test-Path $_filePath){
+    if(Test-Path -LiteralPath $_filePath){
         $word = New-Object -ComObject word.Application
         try {
             #wordを非表示で実行
             $word.Visible = $false
             #警告ウィンドウを表示しない
             #$word.DisplayAlerts = "wdAlertsNone"
-            $doc = $word.Documents.Open($_filePath)
+            #マクロを無効化する
+            #$word.AutomationSecurity = "msoAutomationSecurityForceDisable"
+            #Wordを開く際にパスワードが必要な場合(必要ない場合は無視される)
+            $openPass = ""
+            #Wordテンプレートを開く際にパスワードが必要な場合(必要ない場合は無視される)
+            $openTemple = ""
+            $doc = $word.Documents.Open($_filePath,[type]::Missing,[type]::Missing,[type]::Missing,$openPass,$openTemple)
 
             #ハイパーリンク取得
             $doc.Hyperlinks | ForEach-Object {
@@ -59,7 +65,7 @@ function ReadWordFile($_filePath){
         } finally {
             #wordファイル操作終了時の決まった処理(はじまり)
             if($doc){
-                $doc.Close()
+                $doc.Close($false)
                 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($doc) | Out-Null
                 $doc = $null
                 Remove-Variable -Name doc -ErrorAction SilentlyContinue
@@ -86,17 +92,17 @@ function ReadWordFile($_filePath){
 }
 
 #今回対象としているwordファイルかどうかを確認する
-function GetTargetExtension($_fileName){
+function GetTargetExtension($_fileExtension){
     $result = $false
     #wordファイルのみを対象とする
-    Select-String -InputObject $fileName -Pattern ".+\.(docx?|docm)" | ForEach-Object { $_.Matches } | ForEach-Object { $result = $true }
+    Select-String -InputObject $_fileExtension -Pattern ".(docx?|docm)" | ForEach-Object { $_.Matches } | ForEach-Object { $result = $true }
     return $result
 }
 
-#引数として受け取ったパスからファイル名(拡張子含む)を取得する
+#引数として受け取ったパスから拡張子を取得する
 function GetFileName($_filePath){
-    $fileName = [System.IO.Path]::GetFileName($_filePath)
-    $result = GetTargetExtension -_fileName $fileName
+    $fileExtension = [System.IO.Path]::GetExtension($_filePath)
+    $result = GetTargetExtension -_fileExtension $fileExtension
     if($result){
         ReadWordFile -_filePath $_filePath
     }else {
@@ -105,5 +111,5 @@ function GetFileName($_filePath){
 }
 
 #doc, docx, docmは動作確認済み
-$filePath = ""
+$filePath = "Wordまでのパス"
 GetFileName -_filePath $filePath

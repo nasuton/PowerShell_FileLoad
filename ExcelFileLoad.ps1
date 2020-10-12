@@ -1,15 +1,24 @@
 ﻿#excelファイルを読み込む
 function ReadExcelFile($_filePath){
     #ファイルの存在を確認する
-    if(Test-Path $_filePath){
+    if(Test-Path -LiteralPath $_filePath){
         $excel = New-Object -ComObject Excel.Application
+        #最大行数
+        $maxRow = 100
         try{
             #excelを非表示で実行
             $excel.Visible = $false
             #警告ウィンドウを表示しない
             $excel.DisplayAlerts = $false
+            #マクロを実行させない
+            #$excel.EnableEvents = $false
+            #$excel.AutomationSecurity = "msoAutomationSecurityForceDisable"
+            #Excelを開く際にパスワードが必要な場合(必要ない場合は無視される)
+            $openPass = ""
+            #Excelを書き込む際にパスワードが必要な場合(必要ない場合は無視される)
+            $writePass = ""
             #エクセルを開く
-            $book =  $excel.Workbooks.Open($_filePath)
+            $book =  $excel.Workbooks.Open($_filePath,[type]::Missing,[type]::Missing,[type]::Missing,$openPass,$writePass)
             #シートを読み込み
             $book.Worksheets | ForEach-Object {
                 #ハイパーリンク取得
@@ -33,14 +42,23 @@ function ReadExcelFile($_filePath){
                     }
                 }
                 
+                $rowCnt = 0
                 #行読み込み
                 $_.UsedRange.Rows | ForEach-Object {
+                    $rowCnt += 1
                     #列を読み込み
                     $_.Columns | ForEach-Object {
                         #文字が記載されている個所のみ取得
                         if($_.Text -ne ""){
                             Write-Host $_.Text
+                            $rowCnt = 0
                         }
+                    }
+                    #指定された行数以上1文字も記載がなければ
+                    #現在確認しているシートをスキップする
+                    if($rowCnt -ge $maxRow){
+                        Write-Host これ以上記載がないと判断してスキップします
+                        break
                     }
                 }
             }
@@ -49,7 +67,8 @@ function ReadExcelFile($_filePath){
         } finally {
             #excelファイル操作終了時の決まった処理(はじまり)
             if($book){
-                $book.Close()
+                #Excelを保存をせずに閉じる
+                $book.Close($false)
                 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
                 $book = $null
                 Remove-Variable -Name book -ErrorAction SilentlyContinue
@@ -76,17 +95,17 @@ function ReadExcelFile($_filePath){
 }
 
 #今回対象としているExcelファイルかどうかを確認する
-function GetTargetExtension($_fileName){
+function GetTargetExtension($_fileExtension){
     $result = $false
     #excelファイルのみを対象とする
-    Select-String -InputObject $fileName -Pattern ".+\.(xlsx?|xlsm)" | ForEach-Object { $_.Matches } | ForEach-Object { $result = $true }
+    Select-String -InputObject $_fileExtension -Pattern ".(xlsx?|xlsm)" | ForEach-Object { $_.Matches } | ForEach-Object { $result = $true }
     return $result
 }
 
-#引数として受け取ったパスからファイル名(拡張子含む)を取得する
+#引数として受け取ったパスから拡張子を取得する
 function GetFileName($_filePath){
-    $fileName = [System.IO.Path]::GetFileName($_filePath)
-    $result = GetTargetExtension -_fileName $fileName
+    $fileExtension = [System.IO.Path]::GetExtension($_filePath)
+    $result = GetTargetExtension -_fileExtension $fileExtension
     if($result){
         ReadExcelFile -_filePath $_filePath
     }else {
@@ -95,5 +114,5 @@ function GetFileName($_filePath){
 }
 
 #xls, xlsx, xlsmは動作確認済み
-$filePath = ""
+$filePath = "Excelまでのフルパス"
 GetFileName -_filePath $filePath
