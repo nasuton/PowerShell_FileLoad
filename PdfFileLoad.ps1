@@ -45,5 +45,5 @@ function GetFileName($_filePath){
     }
 }
 
-$filePath = "G:\ForStudying\PowerShell_FileLoad\TargetFile\Test.pdf"
+$filePath = "Pdfファイルまでのパス"
 GetFileName -_filePath $filePath
