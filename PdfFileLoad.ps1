@@ -1,18 +1,18 @@
-$currentPath = Split-Path -Parent $PSCommandPath
+ï»¿$currentPath = Split-Path -Parent $PSCommandPath
 
-#ƒ‚ƒWƒ…[ƒ‹‚Ì“Ç‚İ‚İ
+#ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®èª­ã¿è¾¼ã¿
 $itexDLL = Join-Path $currentPath "itextsharp.dll"
 [Reflection.Assembly]::LoadFrom($itexDLL) | Out-Null
 
 function ReadPdfFile($_filePath){
     if(Test-Path -LiteralPath $_filePath){
         $reader = New-Object iTextSharp.text.pdf.PdfReader($_filePath)
-        #Pdf‚ÌÅ‘åƒy[ƒW‚ğæ“¾
+        #Pdfã®æœ€å¤§ãƒšãƒ¼ã‚¸ã‚’å–å¾—
         $pages = $reader.NumberOfPages
         for($page = 1; $page -le $pages; $page++){
-            #1ƒy[ƒW‚¸‚Â“Ç‚İ‚Ş
+            #1ãƒšãƒ¼ã‚¸ãšã¤èª­ã¿è¾¼ã‚€
             $text = [iTextSharp.text.pdf.parser.PdfTextExtractor]::GetTextFromPage($reader, $page)
-            #1s‚¸‚Â‚É•ª‚¯‚é
+            #1è¡Œãšã¤ã«åˆ†ã‘ã‚‹
             $lines = $text -split "\n"
             foreach($line in $lines){
                 Write-Host $line
@@ -22,28 +22,28 @@ function ReadPdfFile($_filePath){
         $reader.Close()
         $reader.Dispose()
     }else{
-        Write-Host $_filePath ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½B
+        Write-Host $_filePath ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚
     }
 }
 
-#¡‰ñ‘ÎÛ‚Æ‚µ‚Ä‚¢‚éPdfƒtƒ@ƒCƒ‹‚©‚Ç‚¤‚©‚ğŠm”F‚·‚é
+#ä»Šå›å¯¾è±¡ã¨ã—ã¦ã„ã‚‹Pdfãƒ•ã‚¡ã‚¤ãƒ«ã‹ã©ã†ã‹ã‚’ç¢ºèªã™ã‚‹
 function GetTargetExtension($_fileExtension){
     $result = $false
-    #Pdfƒtƒ@ƒCƒ‹‚Ì‚İ‚ğ‘ÎÛ‚Æ‚·‚é
+    #Pdfãƒ•ã‚¡ã‚¤ãƒ«ã®ã¿ã‚’å¯¾è±¡ã¨ã™ã‚‹
     Select-String -InputObject $_fileExtension -Pattern ".pdf" | ForEach-Object { $_.Matches } | ForEach-Object { $result = $true }
     return $result
 }
 
-#ˆø”‚Æ‚µ‚Äó‚¯æ‚Á‚½ƒpƒX‚©‚çŠg’£q‚ğæ“¾‚·‚é
+#å¼•æ•°ã¨ã—ã¦å—ã‘å–ã£ãŸãƒ‘ã‚¹ã‹ã‚‰æ‹¡å¼µå­ã‚’å–å¾—ã™ã‚‹
 function GetFileName($_filePath){
     $fileExtension = [System.IO.Path]::GetExtension($_filePath)
     $result = GetTargetExtension -_fileExtension $fileExtension
     if($result){
         ReadPdfFile -_filePath $_filePath
     }else {
-        Write-Host ‘ÎÛ‚Æ‚È‚éƒtƒ@ƒCƒ‹Œ`®‚Å‚Í‚ ‚è‚Ü‚¹‚ñ‚Å‚µ‚½B
+        Write-Host å¯¾è±¡ã¨ãªã‚‹ãƒ•ã‚¡ã‚¤ãƒ«å½¢å¼ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚
     }
 }
 
-$filePath = "Pdfƒtƒ@ƒCƒ‹‚Ü‚Å‚ÌƒpƒX"
+$filePath = "Pdfãƒ•ã‚¡ã‚¤ãƒ«ã¾ã§ã®ãƒ‘ã‚¹"
 GetFileName -_filePath $filePath
